@@ -1,0 +1,93 @@
+
+.data
+getInput: .asciiz "Give a number to find the prime factors: "
+prompt: .asciiz "Finding all factors of "
+factorsOf: .asciiz " is a factor of "
+isPrime: .word 0
+sum: .word 1
+newLine: .asciiz "\n"
+sumPrompt: .asciiz "Sum: "
+.text
+				#PRINTS THE PROMPT "INPUT A VALUE
+	li $v0,4 		#Specifies the print string service
+	la $a0, getInput	#loads the start string
+	syscall			#displays the string
+	
+				#READS IN THEIR NUMBER THAT THEY PICK
+	li $v0,5		#specifies the read integer service reads in their input
+	syscall	
+			
+	add $s0, $v0, $zero	#save the number they give us in the register $s0
+	
+			      # PRINTS THE PROMPT "FINDING ALL FACTORS OF "
+	la   $a0, prompt      # Load address of prompt for syscall
+     	li   $v0, 4           # Specify Print String service
+     	syscall               # Print the input string
+     	
+     				#PRINTS THE NUMBER THEY INPUT
+	add $a0,$s0, $zero	#add one & load into $a0 for printing
+	li $v0,1		#specifies the print integer service
+	syscall	
+		
+     			  	#PRINTS A NEW LINE
+    	li $v0, 4	  	#specify print string service 
+     	la $a0, newLine	  	#load address of string
+     	syscall		  	#print string
+     
+     	lw $s1, isPrime 	#load isPrime to $s1 
+     	lw $s2, sum		#load sum into $s2
+     	li $s3, 2		#i = 2
+     	
+     	li $v0, 1     		# Specify print integer service
+     	move $a0, $s2  		# store i into $a0 to print (this is a factor so we print it)
+     	syscall  
+     	
+     	li $v0, 4	  	#specify print string service 
+     	la $a0, newLine	  	#load address of string
+     	syscall		  
+    
+For1: 
+	blt $s0, $s3, PrintSum  #start at i, and branch when number is less than i
+	div $s0, $s3  		#divide number by i 
+	mfhi $t0  		#grab number % i from HI register
+	li $s4, 2		#resetting j to 2
+	beqz $t0, setPrime1 	#branch to setPrime1 if (number % i) remainder equals zero
+	jal addI		#i++
+	
+setPrime1: 
+	li $s1, 1  		#setting isPrime to 1	
+For2: 
+	srl $s5, $s3, 1		#shift right logical and put in register $s5 i/2
+	blt $s5, $s4, isFactor	#branch if j < i/2
+	div $s3, $s4		#i/j
+	mfhi $t0		#grab remainder from HI and store in $t0
+	addi $s4, $s4, 1	#j++
+	beqz $t0, setPrime0	#if remainder == 0 call setPrime0
+	jal For2
+	
+setPrime0: 
+	lw $s1, isPrime		#load isPrime into $s1
+	jal addI		#add i++ and loop back to for1
+	
+isFactor: 
+	li $v0, 1     		# Specify print integer service
+     	move $a0, $s3  		# store i into $a0 to print (this is a factor so we print it)
+     	syscall         	# print the factor
+   			  	#PRINTS A NEW LINE
+    	li $v0, 4	  	#specify print string service 
+     	la $a0, newLine	  	#load address of string
+     	syscall		  	#print string
+     	add $s2, $s2, $s3	#sum += i
+addI: 
+	addi $s3, $s3, 1	#i++
+	j For1
+PrintSum:
+	li $v0,4 		#Specifies the print string service
+	la $a0, sumPrompt	#loads the start string
+	syscall			#displays the string
+	li   $v0, 1     	# Specify print integer service
+     	move $a0, $s2  		# store i into $a0 to print (this is a sum so we print it)
+     	syscall         	# print the sum
+Exit:
+	li $v0, 10		#exit
+	syscall 		#we out of here
